@@ -1,14 +1,23 @@
-ARG BUILDER=registry.redhat.io/ubi9/nodejs-18@sha256:ffbad8210aee178157e7621b5fa43fb85f1ac205246b0d2606bea778549da8c1
-ARG RUNTIME=registry.access.redhat.com/ubi9/nginx-124@sha256:78f418251736a947b35e8e8164eb2f5114c751fac764273c11eba601a249f9f7
+ARG BUILDER=registry.redhat.io/ubi8/nodejs-20@sha256:2b073286348c505b277b587c63aa64077ca57abb5544aed520ae00b4186bf23b
+ARG RUNTIME=registry.redhat.io/ubi8/nginx-124@sha256:9f6c14ee78e4d9229f0b91464890ebc6b381a0fbd942d92fa2fc339330b07c33 
 
 FROM $BUILDER AS builder-ui
 
 WORKDIR /go/src/github.com/openshift-pipelines/console-plugin
-COPY upstream .
-RUN npm install -g yarn-1.22.22.tgz
-RUN set -e; for f in patches/*.patch; do echo ${f}; [[ -f ${f} ]] || continue; git apply ${f}; done
-COPY .konflux/yarn.lock .
-RUN yarn install --offline --frozen-lockfile --ignore-scripts && \
+COPY . .
+#Install Yarn
+RUN if [[ -d /cachi2/output/deps/npm/ ]]; then \
+      npm install -g /cachi2/output/deps/npm/yarnpkg-cli-dist-4.6.0.tgz; \
+      YARN_ENABLE_NETWORK=0; \
+    else \
+      echo "ERROR: Hermetic npm deps not injected"; \
+      exit 1; \
+    fi
+
+
+# Install dependencies & build
+USER root
+RUN CYPRESS_INSTALL_BINARY=0 yarn install --immutable && \
     yarn build
 
 FROM $RUNTIME
@@ -22,13 +31,13 @@ USER 1001
 ENTRYPOINT ["nginx", "-g", "daemon off;"]
 
 LABEL \
-    com.redhat.component="openshift-pipelines-console-plugin-rhel9-container" \
-    cpe="cpe:/a:redhat:openshift_pipelines:1.15::el9" \
-    description="Red Hat OpenShift Pipelines console-plugin console-plugin" \
-    io.k8s.description="Red Hat OpenShift Pipelines console-plugin console-plugin" \
-    io.k8s.display-name="Red Hat OpenShift Pipelines console-plugin console-plugin" \
-    io.openshift.tags="tekton,openshift,console-plugin,console-plugin" \
-    maintainer="pipelines-extcomm@redhat.com" \
-    name="openshift-pipelines/pipelines-console-plugin-rhel9" \
-    summary="Red Hat OpenShift Pipelines console-plugin console-plugin" \
-    version="v1.15.5"
+      com.redhat.component="openshift-pipelines-console-plugin-rhel8-container" \
+      name="openshift-pipelines/pipelines-console-plugin-rhel8" \
+      version=$VERSION \
+      summary="Red Hat OpenShift Pipelines Console Plugin" \
+      maintainer="pipelines-extcomm@redhat.com" \
+      description="Red Hat OpenShift Pipelines Console Plugin" \
+      io.k8s.display-name="Red Hat OpenShift Pipelines Console Plugin" \
+      io.k8s.description="Red Hat OpenShift Pipelines Console Plugin" \
+      io.openshift.tags="pipelines,tekton,openshift" \
+      cpe="cpe:/a:redhat:openshift_pipelines:1.15::el8"
