@@ -1,15 +1,24 @@
-ARG BUILDER=registry.redhat.io/ubi9/nodejs-18@sha256:ffbad8210aee178157e7621b5fa43fb85f1ac205246b0d2606bea778549da8c1
-ARG RUNTIME=registry.access.redhat.com/ubi9/nginx-124@sha256:78f418251736a947b35e8e8164eb2f5114c751fac764273c11eba601a249f9f7
+ARG BUILDER=registry.redhat.io/ubi8/nodejs-20@sha256:52d7f59b7f4461d75d73ba2d73d98880e23781c3a122774b2608785f9c10cadd
+ARG RUNTIME=registry.access.redhat.com/ubi8/nginx-124@sha256:967cc23e3567bf06c43518c99ac1eeb889b9f965e17344f027c2484508b1f1da
 
 FROM $BUILDER AS builder-ui
 
 WORKDIR /go/src/github.com/openshift-pipelines/console-plugin
 COPY upstream .
-RUN npm install -g yarn-1.22.22.tgz
-RUN set -e; for f in patches/*.patch; do echo ${f}; [[ -f ${f} ]] || continue; git apply ${f}; done
-COPY .konflux/yarn.lock .
-RUN yarn install --offline --frozen-lockfile --ignore-scripts && \
+#Install Yarn
+RUN if [[ -d /cachi2/output/deps/npm/ ]]; then \
+      npm install -g /cachi2/output/deps/npm/yarnpkg-cli-dist-4.6.0.tgz; \
+      YARN_ENABLE_NETWORK=0; \
+    else \
+      echo "ERROR: Hermetic npm deps not injected"; \
+      exit 1; \
+    fi
+
+# Install dependencies & build
+USER root
+RUN CYPRESS_INSTALL_BINARY=0 yarn install --immutable && \
     yarn build
+
 
 FROM $RUNTIME
 ARG VERSION=1.15
