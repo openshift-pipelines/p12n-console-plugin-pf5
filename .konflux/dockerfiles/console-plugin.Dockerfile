@@ -1,5 +1,5 @@
 ARG BUILDER=registry.redhat.io/ubi9/nodejs-18@sha256:ffbad8210aee178157e7621b5fa43fb85f1ac205246b0d2606bea778549da8c1
-ARG RUNTIME=registry.access.redhat.com/ubi8/ubi-minimal:latest
+ARG RUNTIME=registry.access.redhat.com/ubi8/ubi:latest
 
 FROM $BUILDER AS builder-ui
 
