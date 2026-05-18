@@ -18,18 +18,12 @@ import { TektonTaskRunLog } from './TektonTaskRunLog';
 import { useFullscreen } from './fullscreen';
 import { LoadingInline } from '../Loading';
 import { TektonResourceLabel } from '../../consts';
-import { getMultiClusterPods } from '../utils/multi-cluster-api';
-import { usePoll } from '../pipelines-metrics/poll-hook';
 
 type LogsWrapperComponentProps = {
   taskRun: TaskRunKind;
   downloadAllLabel?: string;
-  onDownloadAll?: () => Promise<Error | null>;
+  onDownloadAll?: () => Promise<Error>;
   resource: WatchK8sResource;
-  activeStep?: string;
-  isResourceManagedByKueue?: boolean;
-  pipelineRunName?: string;
-  pipelineRunFinished?: boolean;
 };
 
 const LogsWrapperComponent: React.FC<
@@ -39,53 +33,11 @@ const LogsWrapperComponent: React.FC<
   taskRun,
   onDownloadAll,
   downloadAllLabel = 'Download all',
-  activeStep,
-  isResourceManagedByKueue,
-  pipelineRunName,
-  pipelineRunFinished,
   ...props
 }) => {
   const { t } = useTranslation('plugin__pipelines-console-plugin');
   const resourceRef = React.useRef(null);
-
-  const k8sResource = isResourceManagedByKueue ? null : resource;
-  const [obj, loaded, error] = useK8sWatchResource<PodKind>(k8sResource);
-
-  // Multi-cluster Pod state for hub clusters
-  const [mcPod, setMcPod] = React.useState<PodKind | null>(null);
-  const [mcLoaded, setMcLoaded] = React.useState(false);
-  const [mcError, setMcError] = React.useState<unknown>(null);
-
-  /* Fetch Pod from multi-cluster API for hub clusters */
-  const fetchMcPod = React.useCallback(async () => {
-    if (!isResourceManagedByKueue || !pipelineRunName || !resource?.name || !resource?.namespace) {
-      return;
-    }
-    try {
-      const podsResponse = await getMultiClusterPods(
-        resource.namespace as string,
-        pipelineRunName,
-      );
-      const pod = podsResponse?.items?.find(
-        (p) => p.metadata?.name === resource.name,
-      );
-      setMcPod(pod);
-      if (!pod) {
-        /* Simuating k8 api */
-        throw new Error('Pod not found in multi-cluster API');
-      }
-      setMcLoaded(true);
-    } catch (e) {
-      setMcError(e);
-      setMcLoaded(true);
-    }
-  }, [isResourceManagedByKueue, pipelineRunName, resource?.name, resource?.namespace]);
-
-  // Poll every 3 seconds while PipelineRun is running, null to disable
-  const pollDelay =
-    isResourceManagedByKueue && !pipelineRunFinished && pipelineRunName ? 3000 : null;
-  usePoll(fetchMcPod, pollDelay, resource?.name, resource?.namespace);
-
+  const [obj, loaded, error] = useK8sWatchResource<PodKind>(resource);
   const [isFullscreen, fullscreenRef, fullscreenToggle] =
     useFullscreen<HTMLDivElement>();
   const [downloadAllStatus, setDownloadAllStatus] = React.useState(false);
@@ -95,17 +47,10 @@ const LogsWrapperComponent: React.FC<
     taskRun?.metadata?.labels?.[TektonResourceLabel.pipelineTask] ||
     taskRun?.spec.taskRef?.name ||
     '-';
-  const effectiveLoaded = isResourceManagedByKueue ? mcLoaded : loaded;
-  const effectiveError = isResourceManagedByKueue ? mcError : error;
-  const effectiveObj = isResourceManagedByKueue ? mcPod : obj;
 
-  if (
-    effectiveLoaded &&
-    !effectiveError &&
-    resource.name === effectiveObj?.metadata?.name
-  ) {
-    resourceRef.current = effectiveObj;
-  } else if (effectiveError) {
+  if (loaded && !error && resource.name === obj.metadata.name) {
+    resourceRef.current = obj;
+  } else if (error) {
     resourceRef.current = null;
   }
 
@@ -141,7 +86,7 @@ const LogsWrapperComponent: React.FC<
       className="pf-v5-u-pr-xl pf-v5-u-display-flex pf-v5-u-flex-direction-column pf-v5-u-h-100 pf-v5-u-w-100"
     >
       <div
-        className={`pf-v5-l-flex pf-m-gap-md pf-m-align-items-center pf-m-justify-content-flex-end ${
+        className={`pf-v5-l-flex pf-m-gap-sm pf-m-align-items-center pf-m-justify-content-flex-end ${
           isFullscreen ? 'pf-v5-u-background-color-100 pf-v5-u-p-sm' : ''
         }`}
       >
@@ -158,11 +103,9 @@ const LogsWrapperComponent: React.FC<
               isDisabled={downloadAllStatus}
               isInline
             >
-              <span className="pf-v5-l-flex pf-m-row pf-m-gap-sm pf-m-align-items-center">
-                <DownloadIcon />
-                <span>{downloadAllLabel || t('Download all')}</span>
-                {downloadAllStatus && <LoadingInline />}
-              </span>
+              <DownloadIcon className="pf-v5-u-mr-xs" />
+              {downloadAllLabel || t('Download all')}
+              {downloadAllStatus && <LoadingInline />}
             </Button>
             <div>|</div>
           </>
@@ -184,16 +127,12 @@ const LogsWrapperComponent: React.FC<
         )}
       </div>
       <div className="pf-v5-u-flex-1">
-        {!effectiveError ? (
+        {!error ? (
           <MultiStreamLogs
             {...props}
             taskName={taskName}
             resource={resourceRef.current}
             setCurrentLogsGetter={setLogGetter}
-            activeStep={activeStep}
-            isResourceManagedByKueue={isResourceManagedByKueue}
-            pipelineRunName={pipelineRunName}
-            pipelineRunFinished={pipelineRunFinished}
           />
         ) : (
           <TektonTaskRunLog

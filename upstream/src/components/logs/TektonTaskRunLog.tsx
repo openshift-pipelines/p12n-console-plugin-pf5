@@ -30,8 +30,8 @@ export const TektonTaskRunLog: React.FC<TektonTaskRunLogProps> = ({
   }, [setCurrentLogsGetter, trResults]);
 
   const errorMessage =
-    (trError as HttpError)?.code === 404 || (trError as HttpError)?.code === 500
-      ? `Unable to access log for ${taskName} task`
+    (trError as HttpError)?.code === 404
+      ? `Logs are no longer accessible for ${taskName} task`
       : null;
 
   // Format trResults to include taskName
