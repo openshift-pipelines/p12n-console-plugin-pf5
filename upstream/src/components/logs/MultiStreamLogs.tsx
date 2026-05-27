@@ -7,20 +7,12 @@ type MultiStreamLogsProps = {
   resource: PodKind;
   taskName?: string;
   setCurrentLogsGetter?: (getter: () => string) => void;
-  activeStep?: string;
-  isResourceManagedByKueue?: boolean;
-  pipelineRunName?: string;
-  pipelineRunFinished?: boolean;
 };
 
 export const MultiStreamLogs: React.FC<MultiStreamLogsProps> = ({
   resource,
   taskName,
   setCurrentLogsGetter,
-  activeStep,
-  isResourceManagedByKueue,
-  pipelineRunName,
-  pipelineRunFinished,
 }) => {
   const { containers, stillFetching } = getRenderContainers(resource);
 
@@ -36,10 +28,6 @@ export const MultiStreamLogs: React.FC<MultiStreamLogsProps> = ({
           resource={resource}
           containers={containers}
           setCurrentLogsGetter={setCurrentLogsGetter}
-          activeStep={activeStep}
-          isResourceManagedByKueue={isResourceManagedByKueue}
-          pipelineRunName={pipelineRunName}
-          pipelineRunFinished={pipelineRunFinished}
         />
       </div>
     </>
