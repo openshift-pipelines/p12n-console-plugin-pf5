@@ -1,5 +1,5 @@
-ARG NJS_BUILDER=registry.access.redhat.com/ubi9/nodejs-24:latest
-ARG NGX_RUNTIME=registry.access.redhat.com/ubi9/nginx-124:latest
+ARG NJS_BUILDER=registry.access.redhat.com/ubi10/nodejs-24:latest
+ARG NGX_RUNTIME=registry.access.redhat.com/ubi10/nginx-124:latest
 
 FROM $NJS_BUILDER AS builder-ui
 
@@ -31,13 +31,13 @@ USER 1001
 ENTRYPOINT ["nginx", "-g", "daemon off;"]
 
 LABEL \
-    com.redhat.component="openshift-pipelines-console-plugin-pf5-rhel9-container" \
+    com.redhat.component="openshift-pipelines-console-plugin-pf5-rhel10-container" \
     cpe="cpe:/a:redhat:openshift_pipelines:nightly::el9" \
     description="Red Hat OpenShift Pipelines console-plugin-pf5 console-plugin" \
     io.k8s.description="Red Hat OpenShift Pipelines console-plugin-pf5 console-plugin" \
     io.k8s.display-name="Red Hat OpenShift Pipelines console-plugin-pf5 console-plugin" \
     io.openshift.tags="tekton,openshift,console-plugin-pf5,console-plugin" \
     maintainer="pipelines-extcomm@redhat.com" \
-    name="openshift-pipelines/pipelines-console-plugin-pf5-rhel9" \
+    name="openshift-pipelines/pipelines-console-plugin-pf5-rhel10" \
     summary="Red Hat OpenShift Pipelines console-plugin-pf5 console-plugin" \
     version="nightly"
