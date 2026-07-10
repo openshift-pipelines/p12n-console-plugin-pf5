@@ -40,4 +40,4 @@ LABEL \
     maintainer="pipelines-extcomm@redhat.com" \
     name="openshift-pipelines/pipelines-console-plugin-pf5-rhel9" \
     summary="Red Hat OpenShift Pipelines console-plugin-pf5 console-plugin" \
-    version="v1.21.3"
+    version="v1.21.4"
