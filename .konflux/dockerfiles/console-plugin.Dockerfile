@@ -1,0 +1,36 @@
+ARG BUILDER=registry.redhat.io/ubi9/nodejs-18@sha256:ffbad8210aee178157e7621b5fa43fb85f1ac205246b0d2606bea778549da8c1
+ARG RUNTIME=registry.access.redhat.com/ubi8/ubi-minimal:latest
+
+FROM $BUILDER AS builder-ui
+
+WORKDIR /go/src/github.com/openshift-pipelines/console-plugin
+COPY upstream .
+COPY .konflux/yarn-1.22.22.tgz .
+RUN npm install -g yarn-1.22.22.tgz
+RUN set -e; for f in patches/*.patch; do echo ${f}; [[ -f ${f} ]] || continue; git apply ${f}; done
+COPY .konflux/yarn.lock .
+RUN sed -i '/"packageManager"/d' package.json
+RUN yarn install --offline --frozen-lockfile --ignore-scripts && \
+    yarn build
+
+FROM $RUNTIME
+ARG VERSION=1.15
+
+COPY --from=builder-ui /go/src/github.com/openshift-pipelines/console-plugin/dist /usr/share/nginx/html
+COPY --from=builder-ui /go/src/github.com/openshift-pipelines/console-plugin/nginx.conf /etc/nginx/nginx.conf
+
+USER 1001
+
+ENTRYPOINT ["nginx", "-g", "daemon off;"]
+
+LABEL \
+    com.redhat.component="openshift-pipelines-console-plugin-pf5-rhel8-container" \
+    cpe="cpe:/a:redhat:openshift_pipelines:1.15::el9" \
+    description="Red Hat OpenShift Pipelines console-plugin-pf5 console-plugin" \
+    io.k8s.description="Red Hat OpenShift Pipelines console-plugin-pf5 console-plugin" \
+    io.k8s.display-name="Red Hat OpenShift Pipelines console-plugin-pf5 console-plugin" \
+    io.openshift.tags="tekton,openshift,console-plugin-pf5,console-plugin" \
+    maintainer="pipelines-extcomm@redhat.com" \
+    name="openshift-pipelines/pipelines-console-plugin-pf5-rhel8" \
+    summary="Red Hat OpenShift Pipelines console-plugin-pf5 console-plugin" \
+    version="v1.15.5"
