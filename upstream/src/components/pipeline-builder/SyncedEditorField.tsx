@@ -1,5 +1,13 @@
-import * as React from 'react';
-import { Alert, Button, AlertActionCloseButton } from '@patternfly/react-core';
+import type { ReactNode, FC } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import {
+  Alert,
+  Button,
+  AlertActionCloseButton,
+  Switch,
+  Flex,
+  Divider,
+} from '@patternfly/react-core';
 import cx from 'classnames';
 import { useField, useFormikContext, FormikValues } from 'formik';
 import * as _ from 'lodash';
@@ -20,7 +28,7 @@ export type SanitizeToYAML = (preFormData: string) => string;
 
 type EditorContext<SanitizeTo> = {
   name: string;
-  editor: React.ReactNode;
+  editor: ReactNode;
   isDisabled?: boolean;
   sanitizeTo?: SanitizeTo;
   label?: string;
@@ -33,17 +41,21 @@ type SyncedEditorFieldProps = {
   lastViewUserSettingKey: string;
   prune?: (data: any) => any;
   noMargin?: boolean;
+  hideOptionalTaskParam?: boolean;
+  setHideOptionalTaskParam?: (value: boolean) => void;
 };
 
-const SyncedEditorField: React.FC<SyncedEditorFieldProps> = ({
+const SyncedEditorField: FC<SyncedEditorFieldProps> = ({
   name,
   formContext,
   yamlContext,
   prune,
   noMargin = false,
+  hideOptionalTaskParam,
+  setHideOptionalTaskParam,
 }) => {
   const { t } = useTranslation('plugin__pipelines-console-plugin');
-  const [editorType, setEditorType] = React.useState<EditorType>(
+  const [editorType, setEditorType] = useState<EditorType>(
     (localStorage.getItem(LOCAL_STORAGE_KEY_EDITOR_TYPE) as EditorType) ||
       EditorType.Form,
   );
@@ -53,11 +65,10 @@ const SyncedEditorField: React.FC<SyncedEditorFieldProps> = ({
 
   const formData = _.get(values, formContext.name);
   const yamlData: string = _.get(values, yamlContext.name);
-
-  const [yamlWarning, setYAMLWarning] = React.useState<boolean>(false);
+  const [yamlWarning, setYAMLWarning] = useState<boolean>(false);
   const [sanitizeToCallback, setSanitizeToCallback] =
-    React.useState<FormErrorCallback>(undefined);
-  const [disabledFormAlert, setDisabledFormAlert] = React.useState<boolean>(
+    useState<FormErrorCallback>(undefined);
+  const [disabledFormAlert, setDisabledFormAlert] = useState<boolean>(
     formContext.isDisabled,
   );
 
@@ -132,15 +143,38 @@ const SyncedEditorField: React.FC<SyncedEditorFieldProps> = ({
     }
     setStatus({ submitError: '' });
   };
+  /* Reset the toggle when no tasks are present and disable it */
+  const isOptionalTaskParamToggleDisabled = useMemo(() => {
+    if (editorType === EditorType.Form) {
+      if (formData?.tasks?.length === 0) {
+        setHideOptionalTaskParam(false);
+        return true;
+      }
+      return false;
+    }
+    if (editorType === EditorType.YAML) {
+      try {
+        const content = safeYAMLToJS(yamlData);
+        if (!content?.spec?.tasks?.length) {
+          setHideOptionalTaskParam(false);
+          return true;
+        }
+        return false;
+      } catch (e) {
+        console.warn('Failed to sync yamlData', e);
+        return true;
+      }
+    }
+  }, [editorType, yamlData, formData?.tasks?.length, setHideOptionalTaskParam]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setDisabledFormAlert(formContext.isDisabled);
     if (field.value !== editorType) {
       setFieldValue(name, editorType);
     }
   }, [editorType, field.value, formContext.isDisabled, name, setFieldValue]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Sync formData when yamlData changes (while in YAML mode)
     if (editorType === EditorType.YAML && yamlData) {
       const syncFormDataFromYaml = async () => {
@@ -175,7 +209,7 @@ const SyncedEditorField: React.FC<SyncedEditorFieldProps> = ({
 
   return (
     <>
-      <div
+      <Flex
         className={cx('ocs-synced-editor-field__editor-toggle', {
           margin: !noMargin,
         })}
@@ -199,7 +233,22 @@ const SyncedEditorField: React.FC<SyncedEditorFieldProps> = ({
           onChange={(val: string) => onChangeType(val as EditorType)}
           isInline
         />
-      </div>
+        <Divider
+          orientation={{
+            default: 'vertical',
+          }}
+        />
+        <div onClick={(e) => e.stopPropagation()}>
+          <Switch
+            className="ocs-synced-editor-field__optional-task-param-toggle"
+            id="optional-param-toggle"
+            label={t('Show required task params only')}
+            isChecked={hideOptionalTaskParam}
+            onChange={(_, checked) => setHideOptionalTaskParam(checked)}
+            isDisabled={isOptionalTaskParamToggleDisabled}
+          />
+        </div>
+      </Flex>
       {yamlWarning && (
         <Alert
           className="co-synced-editor__yaml-warning"

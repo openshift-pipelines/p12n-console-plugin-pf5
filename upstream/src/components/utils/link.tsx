@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import * as React from 'react';
+import type { FC, ReactNode } from 'react';
+
+import { useState } from 'react';
 import cx from 'classnames';
-import Linkify from 'react-linkify';
+import Linkify from 'linkify-react';
 import { useTranslation } from 'react-i18next';
 import { CopyToClipboard as CTC } from 'react-copy-to-clipboard';
 import { Tooltip } from '@patternfly/react-core';
@@ -76,7 +78,7 @@ export const getURLSearchParams = () => {
   return all;
 };
 
-export const ExternalLink: React.FC<ExternalLinkProps> = ({
+export const ExternalLink: FC<ExternalLinkProps> = ({
   children,
   href,
   text,
@@ -98,13 +100,13 @@ export const ExternalLink: React.FC<ExternalLinkProps> = ({
 
 // Opens link with copy-to-clipboard
 
-export const ExternalLinkWithCopy: React.FC<ExternalLinkWithCopyProps> = ({
+export const ExternalLinkWithCopy: FC<ExternalLinkWithCopyProps> = ({
   link,
   text,
   additionalClassName,
   dataTestID,
 }) => {
-  const [copied, setCopied] = React.useState(false);
+  const [copied, setCopied] = useState(false);
 
   const { t } = useTranslation('plugin__pipelines-console-plugin');
   const tooltipText = copied
@@ -144,7 +146,7 @@ export const ExternalLinkWithCopy: React.FC<ExternalLinkWithCopyProps> = ({
               className="co-external-link-with-copy__icon co-external-link-with-copy__copyicon"
             >
               <CopyIcon />
-              <span className="pf-v5-u-screen-reader">
+              <span className="pf-v6-u-screen-reader">
                 {t('Copy to clipboard')}
               </span>
             </span>
@@ -156,18 +158,19 @@ export const ExternalLinkWithCopy: React.FC<ExternalLinkWithCopyProps> = ({
 };
 
 // Open links in a new window and set noopener/noreferrer.
-export const LinkifyExternal: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => (
-  <Linkify properties={{ target: '_blank', rel: 'noopener noreferrer' }}>
+export const LinkifyExternal: FC<{ children: ReactNode }> = ({ children }) => (
+  <Linkify
+    options={{ attributes: { target: '_blank', rel: 'noopener noreferrer' } }}
+  >
     {children}
   </Linkify>
 );
 LinkifyExternal.displayName = 'LinkifyExternal';
 
 type ExternalLinkProps = {
+  children?: ReactNode;
   href: string;
-  text?: React.ReactNode;
+  text?: ReactNode;
   additionalClassName?: string;
   dataTestID?: string;
   stopPropagation?: boolean;
