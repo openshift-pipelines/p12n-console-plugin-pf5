@@ -1,4 +1,5 @@
-import * as React from 'react';
+import type { FC, Ref } from 'react';
+import { useState, useCallback } from 'react';
 import {
   Select,
   SelectList,
@@ -7,25 +8,29 @@ import {
   MenuToggleElement,
 } from '@patternfly/react-core';
 import { CheckCircleIcon } from '@patternfly/react-icons/dist/esm/icons/check-circle-icon';
-import { global_palette_green_500 as greenColor } from '@patternfly/react-tokens';
+import { t_chart_color_green_500 as greenColor } from '@patternfly/react-tokens/dist/js/t_chart_color_green_500';
 import { CatalogItem } from '@openshift-console/dynamic-plugin-sdk';
-import { TektonHubTaskVersion } from '../catalog/apis/tektonHub';
 import { isSelectedVersionInstalled } from './pipeline-quicksearch-utils';
 import { useTranslation } from 'react-i18next';
+
+type TaskVersion = {
+  version: string | number;
+  [key: string]: unknown;
+};
 
 interface PipelineQuickSearchVersionDropdownProps {
   selectedVersion: string;
   item: CatalogItem;
-  versions: TektonHubTaskVersion[];
+  versions: TaskVersion[];
   onChange: (key: string) => void;
 }
 
-const PipelineQuickSearchVersionDropdown: React.FC<
+const PipelineQuickSearchVersionDropdown: FC<
   PipelineQuickSearchVersionDropdownProps
 > = ({ item, versions, onChange, selectedVersion }) => {
   const { t } = useTranslation('plugin__pipelines-console-plugin');
-  const [isOpen, setOpen] = React.useState(false);
-  const toggleIsOpen = React.useCallback(() => setOpen((v) => !v), []);
+  const [isOpen, setOpen] = useState(false);
+  const toggleIsOpen = useCallback(() => setOpen((v) => !v), []);
 
   if (!versions || !versions.length) {
     return null;
@@ -40,7 +45,7 @@ const PipelineQuickSearchVersionDropdown: React.FC<
     return acc;
   }, {});
 
-  const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+  const toggle = (toggleRef: Ref<MenuToggleElement>) => (
     <MenuToggle
       className="opp-quick-search-details__version-dropdown"
       onClick={toggleIsOpen}
@@ -55,9 +60,12 @@ const PipelineQuickSearchVersionDropdown: React.FC<
 
   return (
     <Select
+      id="quick-search-version-dropdown"
       className="opp-quick-search-details__version-dropdown"
       isOpen={isOpen}
-      onSelect={(_, value: string) => {
+      onSelect={(e: React.MouseEvent, value: string) => {
+        /*Fix to avoid modal close on select of version dropdown*/
+        e.stopPropagation();
         if (value) {
           onChange(value);
         }
