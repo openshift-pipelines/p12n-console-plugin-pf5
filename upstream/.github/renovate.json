@@ -3,6 +3,7 @@
   "extends": [
     "github>konflux-ci/mintmaker//config/renovate/renovate.json"
   ],
+  "branchPrefix": "osp-mintmaker/",
   "enabledManagers": [
     "tekton",
     "dockerfile",
@@ -14,7 +15,6 @@
     "konflux",
     "mintmaker"
   ],
-  "ignorePaths": ["upstream/**"],
   "autoApprove": true,
   "packageRules": [
     {

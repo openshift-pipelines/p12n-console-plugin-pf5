@@ -1,6 +1,5 @@
-import type { FC } from 'react';
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { Alert, Banner, Flex, FlexItem } from '@patternfly/react-core';
+import * as React from 'react';
+import { Alert, Banner } from '@patternfly/react-core';
 import { LogViewer } from '@patternfly/react-log-viewer';
 import { Base64 } from 'js-base64';
 import { useTranslation } from 'react-i18next';
@@ -11,12 +10,11 @@ import { ContainerSpec, ContainerStatus, PodKind } from '../../types';
 import { PodModel } from '../../models';
 import { resourceURL } from '../utils/k8s-utils';
 import { containerToLogSourceStatus } from '../utils/pipeline-utils';
-import { Loading } from '../Loading';
+import { LoadingInline } from '../Loading';
 import {
   getMultiClusterLogsUrl,
   getMultiClusterLogsStreamPath,
 } from '../utils/multi-cluster-api';
-import { resetAnsiStatePerLine } from './logs-utils';
 
 type LogsProps = {
   resource: PodKind;
@@ -58,10 +56,10 @@ const processLogData = (
       }
     }
   });
-  return resetAnsiStatePerLine(result);
+  return result;
 };
 
-const Logs: FC<LogsProps> = ({
+const Logs: React.FC<LogsProps> = ({
   stillFetching,
   resource,
   taskName,
@@ -76,21 +74,21 @@ const Logs: FC<LogsProps> = ({
   const { t } = useTranslation('plugin__pipelines-console-plugin');
   const { metadata = {} } = resource;
   const { name: resName, namespace: resNamespace } = metadata;
-  const [error, setError] = useState<boolean>(false);
-  const [logData, setLogData] = useState<LogData>({});
-  const [formattedLogString, setFormattedLogString] = useState('');
-  const [scrollToRow, setScrollToRow] = useState<number>(0);
-  const [activeContainers, setActiveContainers] = useState<Set<string>>(
+  const [error, setError] = React.useState<boolean>(false);
+  const [logData, setLogData] = React.useState<LogData>({});
+  const [formattedLogString, setFormattedLogString] = React.useState('');
+  const [scrollToRow, setScrollToRow] = React.useState<number>(0);
+  const [activeContainers, setActiveContainers] = React.useState<Set<string>>(
     new Set(),
   );
 
   // Ref to track current pipelineRunFinished value for WebSocket retry logic
-  const pipelineRunFinishedRef = useRef(pipelineRunFinished);
-  useEffect(() => {
+  const pipelineRunFinishedRef = React.useRef(pipelineRunFinished);
+  React.useEffect(() => {
     pipelineRunFinishedRef.current = pipelineRunFinished;
   }, [pipelineRunFinished]);
 
-  const findTargetRowForActiveStep = useMemo(
+  const findTargetRowForActiveStep = React.useMemo(
     () => (formattedString: string) => {
       if (!activeStep) return null;
       const lines = formattedString.split('\n');
@@ -107,13 +105,13 @@ const Logs: FC<LogsProps> = ({
     [activeStep],
   );
 
-  useEffect(() => {
+  React.useEffect(() => {
     setCurrentLogsGetter(() => {
       return formattedLogString;
     });
   }, [setCurrentLogsGetter, formattedLogString]);
 
-  const appendMessage = useCallback(
+  const appendMessage = React.useCallback(
     (containerName: string, blockContent: string, resourceStatus: string) => {
       if (blockContent) {
         setLogData((prevLogData) => {
@@ -246,7 +244,7 @@ const Logs: FC<LogsProps> = ({
     return mcWs;
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     containers.forEach((container) => {
       if (activeContainers.has(container.name)) return;
       setActiveContainers((prev) => new Set(prev).add(container.name));
@@ -376,7 +374,7 @@ const Logs: FC<LogsProps> = ({
     pipelineRunFinished,
   ]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const formattedString = processLogData(logData, containers);
     const targetRow = findTargetRowForActiveStep(formattedString);
     if (typeof targetRow === 'number') {
@@ -412,51 +410,40 @@ const Logs: FC<LogsProps> = ({
   }, [logData, activeStep, findTargetRowForActiveStep]);
 
   return (
-    <Flex
-      className={'pf-v6-u-h-100 pf-v6-u-w-100'}
-      direction={{ default: 'column' }}
-    >
+    <div className="pf-v5-u-h-100 pf-v5-u-w-100">
       {error && (
-        <FlexItem>
-          <Alert
-            variant="danger"
-            isInline
-            className="pf-v6-u-my-md"
-            title={t('An error occurred while retrieving the requested logs.')}
-          />
-        </FlexItem>
-      )}
-      <FlexItem flex={{ default: 'flex_4' }} className={'pf-v6-u-min-height'}>
-        <LogViewer
-          useAnsiClasses={true}
-          header={
-            <Banner className="pf-v6-l-flex pf-v6-l-gap-md">
-              <span
-                data-test-id="logs-taskName"
-                className="pf-v6-u-font-size-md"
-              >
-                {taskName}
-              </span>
-              {stillFetching ? (
-                <span data-test-id="loading-indicator">
-                  <Loading isInline={true} />
-                </span>
-              ) : null}
-            </Banner>
-          }
-          hasLineNumbers={false}
-          isTextWrapped={false}
-          data={
-            error
-              ? t('An error occurred while retrieving the requested logs.')
-              : formattedLogString
-          }
-          theme="dark"
-          scrollToRow={scrollToRow}
-          height="100%"
+        <Alert
+          variant="danger"
+          isInline
+          title={t('An error occurred while retrieving the requested logs.')}
         />
-      </FlexItem>
-    </Flex>
+      )}
+      <LogViewer
+        useAnsiClasses={true}
+        header={
+          <Banner className="pf-v5-l-flex pf-v5-l-gap-md">
+            <span data-test-id="logs-taskName" className="pf-v5-u-font-size-md">
+              {taskName}
+            </span>
+            {stillFetching ? (
+              <span data-test-id="loading-indicator">
+                <LoadingInline />
+              </span>
+            ) : null}
+          </Banner>
+        }
+        hasLineNumbers={false}
+        isTextWrapped={false}
+        data={
+          error
+            ? t('An error occurred while retrieving the requested logs.')
+            : formattedLogString
+        }
+        theme="dark"
+        scrollToRow={scrollToRow}
+        height="100%"
+      />
+    </div>
   );
 };
 

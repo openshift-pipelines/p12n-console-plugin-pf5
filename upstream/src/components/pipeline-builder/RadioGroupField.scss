@@ -1,31 +1,30 @@
-.osp-radio-group-field {
+.ocs-radio-group-field {
   input[type='radio'] {
     margin-top: 0;
   }
 
-  &:not(.osp-radio-group-field--inline) {
-    .pf-v6-c-radio {
-      padding-bottom: var(--pf-t--global--spacer--md);
+  &:not(.ocs-radio-group-field--inline) {
+    .pf-v5-c-radio {
+      padding-bottom: var(--pf-v5-global--spacer--md);
     }
-    .pf-v6-c-radio:last-of-type {
+    .pf-v5-c-radio:last-of-type {
       padding-bottom: 0;
     }
-    .osp-radio-group-field__children {
-      padding-top: var(--pf-t--global--spacer--sm);
+    .ocs-radio-group-field__children {
+      padding-top: var(--pf-v5-global--spacer--sm);
     }
   }
 
   &--inline {
     display: flex;
     align-items: center;
-    flex-direction: row !important;
 
-    > .pf-v6-c-form__group-label {
+    > .pf-v5-c-form__group-label {
       padding-bottom: 0;
-      margin-right: var(--pf-t--global--spacer--md);
+      margin-right: var(--pf-v5-global--spacer--md);
     }
   }
-  .pf-v6-c-radio {
+  .pf-v5-c-radio {
     &__description {
       width: 100%;
     }

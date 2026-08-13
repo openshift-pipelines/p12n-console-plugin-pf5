@@ -1,4 +1,4 @@
-import type { PropsWithChildren, FC } from 'react';
+import React from 'react';
 import LogsWrapperComponent from '../../logs/LogsWrapperComponent';
 import { PodModel } from '../../../models';
 import { ComputedStatus, TaskRunKind } from '../../../types';
@@ -10,7 +10,7 @@ type Props = {
   activeStep?: string;
 };
 
-const TaskRunLogs: FC<PropsWithChildren<Props>> = ({
+const TaskRunLogs: React.FC<React.PropsWithChildren<Props>> = ({
   taskRun,
   status,
   activeStep,
@@ -33,7 +33,7 @@ const TaskRunLogs: FC<PropsWithChildren<Props>> = ({
     name: taskRun.status.podName,
   };
   return (
-    <div className="pf-v6-u-flex-1 pf-v6-u-p-xl pf-v6-u-pr-0">
+    <div className="odc-task-run-log">
       <LogsWrapperComponent
         taskRun={taskRun}
         resource={podResources}
