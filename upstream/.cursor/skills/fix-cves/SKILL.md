@@ -149,28 +149,28 @@ confirmation before proceeding:
 | SRVKP-1234 | CVE-2024-12345 | micromatch  | 4.0.8         | pending            |
 ```
 
-Possible status values: `pending`, `fixed`, `lockfile-refresh`, `already-remediated`, `triaged`.
+Possible status values: `pending`, `fixed`, `already-remediated`, `triaged`.
 
 ## Phase 2: Branch Setup and Fix Loop
 
 Process branches one at a time. For each branch:
 
-### 2a. Checkout, sync, and install with existing lockfile
+### 2a. Checkout, sync, and clean install
 
 Before switching branches, verify the working tree is clean with `git status --porcelain`. If it returns any output, stop and ask the user before proceeding.
 
 ```bash
 git checkout <branch>
 git pull upstream <branch>
-rm -rf node_modules
+rm -rf node_modules yarn.lock
 yarn install
 ```
 
-**Important**: Do NOT remove `yarn.lock` at this stage. Install using the existing lockfile so the initial analysis reflects what is currently shipped.
+**Critical**: Always remove both `node_modules` and `yarn.lock` and reinstall to regenerate the dependency graph from scratch and avoid stale resolutions.
 
-### 2b. Initial analysis (with existing lockfile)
+### 2b. Analyze each CVE
 
-For each CVE, run the analysis script against the current lockfile:
+For each CVE, run the analysis script:
 
 ```bash
 npx ts-node --project scripts/fix-cves/tsconfig.json \
@@ -179,7 +179,7 @@ npx ts-node --project scripts/fix-cves/tsconfig.json \
   --fixed-version <ver>
 ```
 
-The script outputs JSON containing a `strategy` field. Categorize each CVE:
+The script outputs JSON containing a `strategy` field. Act on the returned strategy and track the outcome for each CVE:
 
 | Strategy             | Outcome            |
 | -------------------- | ------------------ |
@@ -189,46 +189,17 @@ The script outputs JSON containing a `strategy` field. Categorize each CVE:
 | `parent-upgrade`     | fix-required       |
 | `resolution`         | fix-required       |
 
-Handle `already-remediated` and `triage-needed` CVEs immediately (Jira comments, status updates) as described in the strategy sections below.
+If all CVEs are marked `already-remediated` or `triaged`, do not create a fix branch or PR for this branch.
 
-If all CVEs are `already-remediated` or `triaged` after this step, skip the rest of Phase 2 for this branch — no fix branch, no PR.
+### 2c. Create fix branch
 
-### 2c. Lockfile refresh (for fix-required CVEs)
-
-If any CVEs are marked `fix-required`, attempt to resolve them by refreshing the lockfile before applying any `package.json` changes:
-
-```bash
-rm -rf node_modules yarn.lock
-yarn install
-```
-
-This regenerates the dependency graph from scratch. Yarn may resolve to newer patch/minor versions that include the fix.
-
-Re-run the analysis script for each `fix-required` CVE:
-
-```bash
-npx ts-node --project scripts/fix-cves/tsconfig.json \
-  scripts/fix-cves/analyze-deps.ts \
-  --package <pkg> \
-  --fixed-version <ver>
-```
-
-For each re-analyzed CVE:
-
-- **If the strategy is now `already-remediated`**: the lockfile refresh resolved it. Mark this CVE as `lockfile-refresh` in the tracking table. No `package.json` changes are needed — only `yarn.lock` will be updated in the commit.
-- **If the strategy is still `fix-required`**: the lockfile refresh was not sufficient. This CVE needs explicit remediation (proceed to step 2d).
-
-If all remaining `fix-required` CVEs are now resolved by the lockfile refresh, skip step 2d — the commit will only contain the updated `yarn.lock`.
-
-### 2d. Apply explicit remediation (for remaining fix-required CVEs)
-
-If any CVEs still require remediation after the lockfile refresh, create a fix branch and apply the appropriate strategy.
+Only create a fix branch if at least one CVE is marked `fix-required`.
 
 ```bash
 git checkout -b fix/cve-batch-<branch>
 ```
 
-Proceed with processing each remaining CVE according to the strategy returned by the analysis script in step 2c.
+Proceed with processing each CVE according to the strategy returned by the analysis script.
 
 ### Jira Mentions
 
@@ -365,9 +336,9 @@ Please advise on next steps:
 
 Mark this CVE as `triaged` in the tracking table and skip it.
 
-### 2e. Verify fixes
+### 2d. Verify fixes
 
-After all remediation changes have been applied for the branch (or after lockfile refresh resolved all CVEs), verify each fixed package:
+After all remediation changes have been applied for the branch, verify each fixed package:
 
 ```bash
 yarn why <pkg>
@@ -406,33 +377,13 @@ If a validation step fails:
 * Do not mark the CVE as `fixed` until the remediation has been verified and the validation results have been reviewed.
 * If build or test failures are unrelated to the remediation, record the results and continue based on user approval.
 
-After successful verification and validation, update the status of each remediated CVE from `pending` to `fixed` (or confirm `lockfile-refresh` for CVEs resolved by the lockfile refresh alone).
+After successful verification and validation, update the status of each remediated CVE from `pending` to `fixed`.
 
 ## Phase 3: Create PR
 
-Only create a PR if at least one CVE resulted in an actual dependency change (`fixed` or `lockfile-refresh`). If all CVEs for a branch are `already-remediated` or `triaged`, add the appropriate Jira comments, report the branch status to the user, and continue to the next branch. Only include remediated CVEs in commit messages, PR titles, PR descriptions, and Jira comments.
+Only create a PR if at least one CVE resulted in an actual dependency change. If all CVEs for a branch are `already-remediated` or `triaged`, add the appropriate Jira comments, report the branch status to the user, and continue to the next branch. Only include remediated CVEs in commit messages, PR titles, PR descriptions, and Jira comments.
 
 ### 3a. Commit and push
-
-**If all remediated CVEs were resolved by lockfile refresh** (status `lockfile-refresh`, no `package.json` changes):
-
-```bash
-git checkout -b fix/cve-batch-<branch>
-git add yarn.lock
-
-git commit -m "$(cat <<'EOF'
-fix(deps): resolve CVEs [<fixed-SRVKP-1>, <fixed-SRVKP-2>] on <branch>
-
-Lockfile refresh resolved the following CVEs without package.json changes:
-- <CVE-ID-1> (<pkg1>)
-- <CVE-ID-2> (<pkg2>)
-EOF
-)"
-
-git push -u origin fix/cve-batch-<branch>
-```
-
-**If any CVEs required explicit remediation** (status `fixed`, `package.json` was modified):
 
 ```bash
 git add package.json yarn.lock
@@ -462,7 +413,7 @@ gh pr create \
 
 | SRVKP | CVE ID | Package | Old Version | New Version | Strategy |
 |--------|--------|----------|-------------|-------------|----------|
-| <fixed-SRVKP-1> | <CVE-ID-1> | <pkg1> | <old-ver> | <new-ver> | lockfile-refresh |
+| <fixed-SRVKP-1> | <CVE-ID-1> | <pkg1> | <old-ver> | <new-ver> | direct-upgrade |
 | <fixed-SRVKP-2> | <CVE-ID-2> | <pkg2> | <old-ver> | <new-ver> | resolution |
 
 ## Validation
@@ -565,16 +516,15 @@ Branch: release-vX.Y.x
 
 - [ ] Verified working tree is clean
 - [ ] Synchronized branch with upstream
-- [ ] Installed with existing lockfile
-- [ ] Ran initial CVE analysis against existing lockfile
-- [ ] Attempted lockfile refresh for fix-required CVEs
-- [ ] Re-analyzed CVEs after lockfile refresh
-- [ ] Applied explicit fixes (direct-upgrade / parent-upgrade / resolution) for remaining CVEs, if needed
-- [ ] Recorded outcomes for all CVEs (fixed / lockfile-refresh / already-remediated / triaged)
+- [ ] Performed clean install
+- [ ] Analyzed all CVEs
+- [ ] Created fix branch, if remediation was required
+- [ ] Applied fixes (direct-upgrade / parent-upgrade / resolution), if required
+- [ ] Recorded outcomes for all CVEs (fixed / already-remediated / triaged)
 - [ ] Verified all remediated packages with yarn why / npm ls
 - [ ] Ran yarn build
 - [ ] Ran yarn test
-- [ ] Created fix branch, committed, and pushed changes, if remediation was required
+- [ ] Committed and pushed changes, if remediation was required
 - [ ] Created PR with evidence, if remediation was required
 - [ ] Updated Jira with remediation results
 ```

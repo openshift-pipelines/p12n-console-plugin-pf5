@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ExternalLink } from '../../utils/link';
 
@@ -11,7 +11,7 @@ interface ApprovalToastContentProps {
   namespaceName?: string;
 }
 
-const ApprovalToastContent: FC<ApprovalToastContentProps> = ({
+const ApprovalToastContent: React.FC<ApprovalToastContentProps> = ({
   type,
   uniquePipelineRuns,
   path,

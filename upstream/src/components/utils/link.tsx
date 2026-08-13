@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { FC, ReactNode } from 'react';
-
-import { useState } from 'react';
+import * as React from 'react';
 import cx from 'classnames';
 import Linkify from 'linkify-react';
 import { useTranslation } from 'react-i18next';
@@ -78,7 +76,7 @@ export const getURLSearchParams = () => {
   return all;
 };
 
-export const ExternalLink: FC<ExternalLinkProps> = ({
+export const ExternalLink: React.FC<ExternalLinkProps> = ({
   children,
   href,
   text,
@@ -100,13 +98,13 @@ export const ExternalLink: FC<ExternalLinkProps> = ({
 
 // Opens link with copy-to-clipboard
 
-export const ExternalLinkWithCopy: FC<ExternalLinkWithCopyProps> = ({
+export const ExternalLinkWithCopy: React.FC<ExternalLinkWithCopyProps> = ({
   link,
   text,
   additionalClassName,
   dataTestID,
 }) => {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = React.useState(false);
 
   const { t } = useTranslation('plugin__pipelines-console-plugin');
   const tooltipText = copied
@@ -146,7 +144,7 @@ export const ExternalLinkWithCopy: FC<ExternalLinkWithCopyProps> = ({
               className="co-external-link-with-copy__icon co-external-link-with-copy__copyicon"
             >
               <CopyIcon />
-              <span className="pf-v6-u-screen-reader">
+              <span className="pf-v5-u-screen-reader">
                 {t('Copy to clipboard')}
               </span>
             </span>
@@ -158,7 +156,9 @@ export const ExternalLinkWithCopy: FC<ExternalLinkWithCopyProps> = ({
 };
 
 // Open links in a new window and set noopener/noreferrer.
-export const LinkifyExternal: FC<{ children: ReactNode }> = ({ children }) => (
+export const LinkifyExternal: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => (
   <Linkify
     options={{ attributes: { target: '_blank', rel: 'noopener noreferrer' } }}
   >
@@ -168,9 +168,8 @@ export const LinkifyExternal: FC<{ children: ReactNode }> = ({ children }) => (
 LinkifyExternal.displayName = 'LinkifyExternal';
 
 type ExternalLinkProps = {
-  children?: ReactNode;
   href: string;
-  text?: ReactNode;
+  text?: React.ReactNode;
   additionalClassName?: string;
   dataTestID?: string;
   stopPropagation?: boolean;

@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import * as React from 'react';
 import * as fuzzy from 'fuzzysearch';
 import { useTranslation } from 'react-i18next';
 import {
@@ -23,10 +23,9 @@ import './PVCDropdown.scss';
 
 interface PVCDropdownProps {
   name: string;
-  isFullWidth?: boolean;
 }
 
-const PVCDropdown: FC<PVCDropdownProps> = ({ name, isFullWidth }) => {
+const PVCDropdown: React.FC<PVCDropdownProps> = ({ name }) => {
   const { t } = useTranslation('plugin__pipelines-console-plugin');
   const [field, { touched, error }] = useField(name);
   const { setFieldValue, setFieldTouched } = useFormikContext<FormikValues>();
@@ -63,7 +62,7 @@ const PVCDropdown: FC<PVCDropdownProps> = ({ name, isFullWidth }) => {
           selectedKey={field.value}
           placeholder={t('Select a PVC')}
           autocompleteFilter={autocompleteFilter}
-          dropDownClassName={cx({ 'pf-v6-u-w-100': isFullWidth })}
+          dropDownClassName={cx({ 'dropdown--full-width': true })}
           onChange={(value: string) => {
             setFieldValue(name, value);
             setFieldTouched(name, true);

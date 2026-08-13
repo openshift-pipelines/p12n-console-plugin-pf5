@@ -1,5 +1,5 @@
-import type { FC } from 'react';
-import { Alert, Stack, StackItem, Title } from '@patternfly/react-core';
+import * as React from 'react';
+import { Stack, StackItem, Title } from '@patternfly/react-core';
 import { FormikErrors, useField } from 'formik';
 import { Trans, useTranslation } from 'react-i18next';
 import {
@@ -24,7 +24,6 @@ import './TaskSidebar.scss';
 import { TaskType, UpdateOperationRenameTaskData } from '../types';
 import { getTaskParameters, getTaskResources } from '../utils';
 import { CloseButton } from '@patternfly/react-component-groups';
-import { paramIsRequired } from '../../../components/start-pipeline/validation-utils';
 
 type TaskSidebarProps = {
   errorMap: FormikErrors<PipelineTask>[];
@@ -34,7 +33,6 @@ type TaskSidebarProps = {
   workspaceList: TektonWorkspace[];
   selectedData: SelectedBuilderTask;
   onClose: () => void;
-  hideOptionalTaskParam: boolean;
 };
 
 /** Protect against -1 index for Formik 'name' use-cases */
@@ -43,7 +41,7 @@ function safeIndex<T>(list: T[], comparatorFunc: (v: T) => boolean): number {
   return idx === -1 ? list.length : idx;
 }
 
-const TaskSidebar: FC<TaskSidebarProps> = (props) => {
+const TaskSidebar: React.FC<TaskSidebarProps> = (props) => {
   const { t } = useTranslation('plugin__pipelines-console-plugin');
   const {
     onRemoveTask,
@@ -52,7 +50,6 @@ const TaskSidebar: FC<TaskSidebarProps> = (props) => {
     workspaceList,
     selectedData,
     onClose,
-    hideOptionalTaskParam,
   } = props;
   const { isFinallyTask, taskIndex, resource: taskResource } = selectedData;
   const taskType: TaskType = isFinallyTask ? 'finallyTasks' : 'tasks';
@@ -65,8 +62,7 @@ const TaskSidebar: FC<TaskSidebarProps> = (props) => {
   const inputResources: TektonResource[] = resources.inputs || [];
   const outputResources: TektonResource[] = resources.outputs || [];
   const workspaces: TektonWorkspace[] = taskResource.spec.workspaces || [];
-  const displayTaskParams: boolean =
-    !hideOptionalTaskParam || params?.some((param) => paramIsRequired(param));
+
   const renderResource =
     (type: ResourceTarget) => (resource: TektonResource) => {
       const taskResources: PipelineTaskResource[] =
@@ -102,7 +98,7 @@ const TaskSidebar: FC<TaskSidebarProps> = (props) => {
           removeThisTask={() => onRemoveTask(thisTask.name)}
         />
       </StackItem>
-      <StackItem className="opp-task-sidebar__content pf-v6-c-form">
+      <StackItem className="opp-task-sidebar__content pf-v5-c-form">
         <TaskSidebarName
           name={`${formikTaskReference}.name`}
           taskName={taskResource.metadata.name}
@@ -116,43 +112,29 @@ const TaskSidebar: FC<TaskSidebarProps> = (props) => {
         {params.length > 0 && (
           <div>
             <Title headingLevel="h2">{t('Parameters')}</Title>
-            {displayTaskParams ? (
-              <>
-                <p className="co-help-text opp-task-sidebar__paragraph">
-                  <Trans ns="plugin__pipelines-console-plugin">
-                    Use this format when you reference variables in this form:{' '}
-                    <code className="co-code">$(</code>
-                  </Trans>
-                </p>
-                {params.map((param) => {
-                  const taskParams: PipelineTaskParam[] = thisTask.params || [];
-                  const paramIdx = safeIndex(
-                    taskParams,
-                    (thisParam) => thisParam.name === param.name,
-                  );
-                  if (hideOptionalTaskParam && !paramIsRequired(param)) {
-                    return null;
-                  }
-                  return (
-                    <div key={param.name} className="opp-task-sidebar__param">
-                      <TaskSidebarParam
-                        hasParam={!!taskParams[paramIdx]}
-                        name={`${formikTaskReference}.params.${paramIdx}`}
-                        resourceParam={param}
-                        selectedData={selectedData}
-                      />
-                    </div>
-                  );
-                })}
-              </>
-            ) : (
-              <Alert
-                isInline
-                variant="warning"
-                className="pf-v6-u-mt-md"
-                title={t('There are no required params for this task')}
-              />
-            )}
+            <p className="co-help-text opp-task-sidebar__paragraph">
+              <Trans ns="plugin__pipelines-console-plugin">
+                Use this format when you reference variables in this form:{' '}
+                <code className="co-code">$(</code>
+              </Trans>
+            </p>
+            {params.map((param) => {
+              const taskParams: PipelineTaskParam[] = thisTask.params || [];
+              const paramIdx = safeIndex(
+                taskParams,
+                (thisParam) => thisParam.name === param.name,
+              );
+              return (
+                <div key={param.name} className="opp-task-sidebar__param">
+                  <TaskSidebarParam
+                    hasParam={!!taskParams[paramIdx]}
+                    name={`${formikTaskReference}.params.${paramIdx}`}
+                    resourceParam={param}
+                    selectedData={selectedData}
+                  />
+                </div>
+              );
+            })}
           </div>
         )}
         {workspaces.length > 0 && (

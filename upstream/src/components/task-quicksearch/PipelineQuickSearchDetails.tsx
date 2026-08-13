@@ -1,5 +1,4 @@
-import type { FC } from 'react';
-import { useState, useCallback, useEffect } from 'react';
+import * as React from 'react';
 import {
   Button,
   ButtonVariant,
@@ -11,13 +10,13 @@ import {
   SplitItem,
   Stack,
   StackItem,
-  Content,
+  TextContent,
   Title,
 } from '@patternfly/react-core';
 import { CheckCircleIcon } from '@patternfly/react-icons/dist/esm/icons/check-circle-icon';
 import { debounce } from 'lodash';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router';
+import { useHistory } from 'react-router';
 import { useFlag } from '@openshift-console/dynamic-plugin-sdk';
 import { getArtifactHubTaskDetails } from '../catalog/apis/artifactHub';
 import {
@@ -35,7 +34,7 @@ import { FLAGS } from '../../types';
 
 import './PipelineQuickSearchDetails.scss';
 
-const PipelineQuickSearchDetails: FC<QuickSearchDetailsRendererProps> = ({
+const PipelineQuickSearchDetails: React.FC<QuickSearchDetailsRendererProps> = ({
   selectedItem,
   closeModal,
   namespace,
@@ -43,25 +42,25 @@ const PipelineQuickSearchDetails: FC<QuickSearchDetailsRendererProps> = ({
   setFailedTasks,
 }) => {
   const { t } = useTranslation('plugin__pipelines-console-plugin');
-  const navigate = useNavigate();
+  const history = useHistory();
   const isDevConsoleProxyAvailable = useFlag(FLAGS.DEVCONSOLE_PROXY);
-  const [selectedVersion, setSelectedVersion] = useState<string>();
-  const [versions, setVersions] = useState(
+  const [selectedVersion, setSelectedVersion] = React.useState<string>();
+  const [versions, setVersions] = React.useState(
     selectedItem?.attributes?.versions ?? [],
   );
-  const [hasInstalledVersion, setHasInstalledVersion] = useState<boolean>(
+  const [hasInstalledVersion, setHasInstalledVersion] = React.useState<boolean>(
     isOneVersionInstalled(selectedItem),
   );
-  const [detailsLoaded, setDetailsLoaded] = useState<boolean>(
+  const [detailsLoaded, setDetailsLoaded] = React.useState<boolean>(
     !isArtifactHubTask(selectedItem),
   );
-  const resetVersions = useCallback(() => {
+  const resetVersions = React.useCallback(() => {
     setVersions(selectedItem?.attributes?.versions ?? []);
     setSelectedVersion(selectedItem?.attributes?.installed ?? '');
     setHasInstalledVersion(isOneVersionInstalled(selectedItem));
   }, [selectedItem]);
 
-  const onChangeVersion = useCallback(
+  const onChangeVersion = React.useCallback(
     (key) => {
       setSelectedVersion(key);
       if (isArtifactHubTask(selectedItem)) {
@@ -89,7 +88,7 @@ const PipelineQuickSearchDetails: FC<QuickSearchDetailsRendererProps> = ({
     [resetVersions, selectedItem],
   );
 
-  useEffect(() => {
+  React.useEffect(() => {
     resetVersions();
     let mounted = true;
 
@@ -132,7 +131,7 @@ const PipelineQuickSearchDetails: FC<QuickSearchDetailsRendererProps> = ({
     };
   }, [resetVersions, selectedItem]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (isTaskVersionInstalled(selectedItem)) {
       setSelectedVersion(selectedItem.attributes.installed);
     } else {
@@ -142,7 +141,6 @@ const PipelineQuickSearchDetails: FC<QuickSearchDetailsRendererProps> = ({
       );
     }
   }, [selectedItem]);
-
   return (
     <div className="opp-quick-search-details">
       <Level hasGutter>
@@ -165,7 +163,7 @@ const PipelineQuickSearchDetails: FC<QuickSearchDetailsRendererProps> = ({
                 className="opp-quick-search-details__form-button"
                 isDisabled={!detailsLoaded}
                 onClick={(e) => {
-                  handleCta(e, selectedItem, closeModal, navigate, {
+                  handleCta(e, selectedItem, closeModal, history, {
                     selectedVersion,
                     selectedItem,
                     isDevConsoleProxyAvailable,
@@ -208,12 +206,12 @@ const PipelineQuickSearchDetails: FC<QuickSearchDetailsRendererProps> = ({
           ctaType={getTaskCtaType(selectedItem, selectedVersion)}
         />
       }
-      <Content
+      <TextContent
         className="opp-quick-search-details__description"
         data-test="task-description"
       >
         {selectedItem.description}
-      </Content>
+      </TextContent>
       <Stack className="opp-quick-search-details__badges-section" hasGutter>
         {selectedItem?.attributes?.categories?.length > 0 && (
           <StackItem>

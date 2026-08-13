@@ -1,5 +1,4 @@
-import type { FC, Ref } from 'react';
-import { useState, useCallback } from 'react';
+import * as React from 'react';
 import {
   Select,
   SelectList,
@@ -8,7 +7,7 @@ import {
   MenuToggleElement,
 } from '@patternfly/react-core';
 import { CheckCircleIcon } from '@patternfly/react-icons/dist/esm/icons/check-circle-icon';
-import { t_chart_color_green_500 as greenColor } from '@patternfly/react-tokens/dist/js/t_chart_color_green_500';
+import { global_palette_green_500 as greenColor } from '@patternfly/react-tokens';
 import { CatalogItem } from '@openshift-console/dynamic-plugin-sdk';
 import { isSelectedVersionInstalled } from './pipeline-quicksearch-utils';
 import { useTranslation } from 'react-i18next';
@@ -25,12 +24,12 @@ interface PipelineQuickSearchVersionDropdownProps {
   onChange: (key: string) => void;
 }
 
-const PipelineQuickSearchVersionDropdown: FC<
+const PipelineQuickSearchVersionDropdown: React.FC<
   PipelineQuickSearchVersionDropdownProps
 > = ({ item, versions, onChange, selectedVersion }) => {
   const { t } = useTranslation('plugin__pipelines-console-plugin');
-  const [isOpen, setOpen] = useState(false);
-  const toggleIsOpen = useCallback(() => setOpen((v) => !v), []);
+  const [isOpen, setOpen] = React.useState(false);
+  const toggleIsOpen = React.useCallback(() => setOpen((v) => !v), []);
 
   if (!versions || !versions.length) {
     return null;
@@ -45,7 +44,7 @@ const PipelineQuickSearchVersionDropdown: FC<
     return acc;
   }, {});
 
-  const toggle = (toggleRef: Ref<MenuToggleElement>) => (
+  const toggle = (toggleRef: React.Ref<MenuToggleElement>) => (
     <MenuToggle
       className="opp-quick-search-details__version-dropdown"
       onClick={toggleIsOpen}
@@ -60,12 +59,9 @@ const PipelineQuickSearchVersionDropdown: FC<
 
   return (
     <Select
-      id="quick-search-version-dropdown"
       className="opp-quick-search-details__version-dropdown"
       isOpen={isOpen}
-      onSelect={(e: React.MouseEvent, value: string) => {
-        /*Fix to avoid modal close on select of version dropdown*/
-        e.stopPropagation();
+      onSelect={(_, value: string) => {
         if (value) {
           onChange(value);
         }

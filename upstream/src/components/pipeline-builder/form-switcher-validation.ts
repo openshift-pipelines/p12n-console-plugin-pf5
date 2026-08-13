@@ -4,11 +4,7 @@ import { PipelineKind } from '../../types';
 import { initialPipelineFormData } from './const';
 import { pipelineBuilderYAMLSchema } from './switch-to-form-validation-utils';
 import { PipelineBuilderFormValues, PipelineBuilderTaskBase } from './types';
-import {
-  convertBuilderFormToPipeline,
-  extractWorkspaceDefaults,
-  parseDefaultWorkspaceAnnotation,
-} from './utils';
+import { convertBuilderFormToPipeline } from './utils';
 import { runAfterMatches } from './validation-utils';
 import { safeJSToYAML } from './yaml';
 
@@ -34,24 +30,9 @@ export const getFormData = (
     'finallyListTasks',
     'loadingTasks',
   ]);
-
-  const defaultWorkspaceMap: Record<
-    string,
-    { type?: string; name?: string }[]
-  > = parseDefaultWorkspaceAnnotation(yamlPipeline.metadata?.annotations);
-
-  const workspaces = (pipelineSpecProperties.workspaces ?? []).map(
-    (workspace) => ({
-      ...workspace,
-      optional: !!workspace.optional,
-      ...extractWorkspaceDefaults(defaultWorkspaceMap, workspace),
-    }),
-  );
-
   return {
     ...pipelineSpecProperties, // support & keep unknown values as well as whatever they may have changed that we use
     name: yamlPipeline.metadata?.name,
-    workspaces,
     finallyTasks,
     listTasks: sanitizedListTasks,
     finallyListTasks,

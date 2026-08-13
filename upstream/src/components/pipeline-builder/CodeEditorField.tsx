@@ -1,7 +1,6 @@
-import type { FC } from 'react';
-import { useRef, useState, useCallback } from 'react';
+import * as React from 'react';
 import classNames from 'classnames';
-import { Alert, Button } from '@patternfly/react-core';
+import { Button } from '@patternfly/react-core';
 import { InfoCircleIcon } from '@patternfly/react-icons/dist/esm/icons/info-circle-icon';
 import { FormikValues, useField, useFormikContext } from 'formik';
 import { isEmpty } from 'lodash';
@@ -34,8 +33,6 @@ export interface CodeEditorFieldProps extends FieldProps {
   showSamples: boolean;
   showShortcuts?: boolean;
   showMiniMap?: boolean;
-  hideOptionalTaskParam?: boolean;
-  displayValue?: string;
   onSave?: () => void;
 }
 
@@ -44,7 +41,7 @@ const SampleResource: WatchK8sResource = {
   isList: true,
 };
 
-const CodeEditorField: FC<CodeEditorFieldProps> = ({
+const CodeEditorField: React.FC<CodeEditorFieldProps> = ({
   name,
   label,
   model,
@@ -55,17 +52,13 @@ const CodeEditorField: FC<CodeEditorFieldProps> = ({
   minHeight,
   onSave,
   language,
-  hideOptionalTaskParam,
-  displayValue,
 }) => {
   const [field] = useField(name);
   const { setFieldValue, setStatus } = useFormikContext<FormikValues>();
   const { t } = useTranslation('plugin__pipelines-console-plugin');
-  const editorRef = useRef();
-  const lastDisplayValueRef = useRef<string>();
-  lastDisplayValueRef.current = displayValue;
+  const editorRef = React.useRef();
 
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
+  const [sidebarOpen, setSidebarOpen] = React.useState<boolean>(true);
 
   const [sampleResources, loaded, loadError] =
     useK8sWatchResource<K8sResourceCommon[]>(SampleResource);
@@ -87,7 +80,7 @@ const CodeEditorField: FC<CodeEditorFieldProps> = ({
   const [templateExtensions] =
     useResolvedExtensions<YAMLTemplate>(isYAMLTemplate);
 
-  const sanitizeYamlContent = useCallback(
+  const sanitizeYamlContent = React.useCallback(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     (id = 'default', yaml = '', kind: string) => {
       if (yaml) {
@@ -97,14 +90,8 @@ const CodeEditorField: FC<CodeEditorFieldProps> = ({
     },
     [templateExtensions],
   );
-  const editorValue =
-    hideOptionalTaskParam && displayValue ? displayValue : field.value;
 
   const handleOnChange = (newYAML: string) => {
-    /* this is to prevent updating the field value every time the optional task param toggle is clicked */
-    if (displayValue && lastDisplayValueRef.current === newYAML) {
-      return;
-    }
     setFieldValue(name, newYAML);
     setStatus({ submitError: '' });
   };
@@ -118,20 +105,9 @@ const CodeEditorField: FC<CodeEditorFieldProps> = ({
         })}
       >
         <div className="osc-yaml-editor__editor">
-          {hideOptionalTaskParam && (
-            <Alert
-              className="pf-v6-u-m-md pf-v6-u-mt-0 pf-v6-u-ml-0"
-              isInline
-              variant="info"
-              title={t(
-                'Optional task parameters are hidden in this pipeline. The YAML is read-only. Disable the toggle to make changes.',
-              )}
-            />
-          )}
           <CodeEditor
-            isReadOnly={hideOptionalTaskParam}
             ref={editorRef}
-            value={editorValue}
+            value={field.value}
             minHeight={minHeight ?? '200px'}
             onChange={handleOnChange}
             onSave={onSave}
@@ -142,14 +118,12 @@ const CodeEditorField: FC<CodeEditorFieldProps> = ({
               !sidebarOpen &&
               hasSidebarContent && [
                 <Button
-                  icon={
-                    <InfoCircleIcon className="co-icon-space-r odc-p-has-sidebar__sidebar-link-icon" />
-                  }
                   isInline
                   variant="link"
                   onClick={() => setSidebarOpen(true)}
                   key=""
                 >
+                  <InfoCircleIcon className="co-icon-space-r odc-p-has-sidebar__sidebar-link-icon" />
                   {t('View sidebar')}
                 </Button>,
               ]
