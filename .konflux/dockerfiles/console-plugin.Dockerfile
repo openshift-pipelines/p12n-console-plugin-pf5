@@ -1,5 +1,5 @@
-ARG NJS_BUILDER=registry.access.redhat.com/ubi9/nodejs-24:latest
-ARG NGX_RUNTIME=registry.access.redhat.com/ubi9/nginx-124:latest
+ARG NJS_BUILDER=registry.access.redhat.com/ubi9/nodejs-24@sha256:36af0bcb31021be93b0aab49e3ebcbbe07326496a550cface3294634fe7e6433
+ARG NGX_RUNTIME=registry.access.redhat.com/ubi9/nginx-124@sha256:a06ab8261e4d49a48d1e465a48eac1f867b1a696e5481b8d661ddadef0cb4352
 
 FROM $NJS_BUILDER AS builder-ui
 
