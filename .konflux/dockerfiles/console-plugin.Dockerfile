@@ -32,7 +32,7 @@ ENTRYPOINT ["nginx", "-g", "daemon off;"]
 
 LABEL \
     com.redhat.component="openshift-pipelines-console-plugin-pf5-rhel9-container" \
-    cpe="cpe:/a:redhat:openshift_pipelines:1.22::el9" \
+    cpe="cpe:/a:redhat:openshift_pipelines:1.23::el9" \
     description="Red Hat OpenShift Pipelines console-plugin-pf5 console-plugin" \
     io.k8s.description="Red Hat OpenShift Pipelines console-plugin-pf5 console-plugin" \
     io.k8s.display-name="Red Hat OpenShift Pipelines console-plugin-pf5 console-plugin" \
@@ -40,4 +40,4 @@ LABEL \
     maintainer="pipelines-extcomm@redhat.com" \
     name="openshift-pipelines/pipelines-console-plugin-pf5-rhel9" \
     summary="Red Hat OpenShift Pipelines console-plugin-pf5 console-plugin" \
-    version="v1.22.7"
+    version="v1.23.3"
