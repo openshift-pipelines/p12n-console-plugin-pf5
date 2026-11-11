@@ -1,7 +1,7 @@
-ARG NJS_BUILDER=registry.access.redhat.com/ubi9/nodejs-24:latest@sha256:8783eefc2f87113865eb24478fdd9351dd34c3928827895f319d57a3165fff09
+ARG BUILDER=registry.access.redhat.com/ubi9/nodejs-24:latest@sha256:8783eefc2f87113865eb24478fdd9351dd34c3928827895f319d57a3165fff09
 ARG NGX_RUNTIME=registry.access.redhat.com/ubi9/nginx-124:latest@sha256:d5cec86a9adf972dbfa0d87b134e7c404706cc1920fc2e6a2b146e290276f219
 
-FROM $NJS_BUILDER AS builder-ui
+FROM $BUILDER AS builder-ui
 
 WORKDIR /go/src/github.com/openshift-pipelines/console-plugin
 COPY upstream .
